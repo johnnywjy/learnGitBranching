@@ -4,6 +4,7 @@ var util = require('../util');
 var constants = require('../util/constants');
 var intl = require('../intl');
 
+var Commands = require('../commands');
 var Errors = require('../util/errors');
 var CommandProcessError = Errors.CommandProcessError;
 var GitError = Errors.GitError;
@@ -108,6 +109,7 @@ var regexMap = {
   'mobileAlert': /^mobile alert($|\s)/,
   'build level': /^build +level($|\s)/,
   'export tree': /^export +tree$/,
+  'importTreeNow': /^importTreeNow($|\s)/,
   'import tree': /^import +tree$/,
   'import level': /^import +level$/,
   'undo': /^undo($|\s)/
@@ -120,10 +122,14 @@ var getAllCommands = function() {
 
   var allCommands = _.extend(
     {},
-    require('../git/commands').regexMap,
     require('../level').regexMap,
     regexMap
   );
+  _.each(Commands.commands.getRegexMap(), function(map, vcs) {
+    _.each(map, function(regex, method) {
+      allCommands[vcs + ' ' + method] = regex;
+    });
+  });
   _.each(toDelete, function(key) {
     delete allCommands[key];
   });

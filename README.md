@@ -53,6 +53,8 @@ git push
 # go online and request a pull
 ```
 
+You may also need to install jasmine-node globally to run the testing task, but the build should finish regardless.
+
 ## Helpful Folks
 A big shoutout to these brave souls for extensively testing our sandbox and finding bugs and/or inconsistencies:
 
@@ -66,6 +68,7 @@ And the following heroes for assisting in translating:
 * "bcho"
 * "scientific-coder"
 * "ace-coder"
+* Joël Thieffry
 
 Also huge shoutout for everyone who has put up a pull request that was pulled:
 
@@ -84,6 +87,15 @@ Also huge shoutout for everyone who has put up a pull request that was pulled:
 * "scientific-coder"
 * "ace-coder"
 * Jeffrey Fisher
+* Brad Smith
+* Allen Guo
+* Timothy Qiu
+* Hyunjin CHA
+* "nem75"
+* Fabio Crisci (piuccio)
+* Max Sikström (pengi) [tag support!!]
+* "rogererens"
+* Emanuel Schorsch
 
 Or reported an issue that was successfully closed!
 
@@ -109,4 +121,15 @@ Or reported an issue that was successfully closed!
 * Duane Johnson
 * Neil Chue Hong
 * "Goodwine"
+* Brandon McCaig
+* Borislav Kosharov
+* Ben Heavner
+* Michael (mick-d)
+* Adam Brewer
+* Tobias Pfeiffer
+* Nicholas "LB" Braden
+* Jeffrey Jones
+* Kyle (kyleIDMI)
+* "iplus"
+* Christian Sauer
 

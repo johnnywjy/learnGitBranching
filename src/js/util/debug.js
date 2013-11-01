@@ -5,8 +5,9 @@ var toGlobalize = {
   Visuals: require('../visuals'),
   Git: require('../git'),
   CommandModel: require('../models/commandModel'),
-  Levels: require('../git/treeCompare'),
+  Levels: require('../graph/treeCompare'),
   Constants: require('../util/constants'),
+  Commands: require('../commands'),
   Collections: require('../models/collections'),
   Async: require('../visuals/animation'),
   AnimationFactory: require('../visuals/animation/animationFactory'),
@@ -19,23 +20,30 @@ var toGlobalize = {
   ZoomLevel: require('../util/zoomLevel'),
   VisBranch: require('../visuals/visBranch'),
   Level: require('../level'),
-  Sandbox: require('../level/sandbox'),
+  Sandbox: require('../sandbox/'),
   GitDemonstrationView: require('../views/gitDemonstrationView'),
   Markdown: require('markdown'),
   LevelDropdownView: require('../views/levelDropdownView'),
   BuilderViews: require('../views/builderViews'),
+  LevelArbiter: require('../level/arbiter'),
   Intl: require('../intl')
 };
 
 _.each(toGlobalize, function(module) {
-  _.extend(window, module);
+  for (var key in module) {
+    window['debug_' + key] = module[key];
+  }
 });
 
 $(document).ready(function() {
-  window.events = toGlobalize.Main.getEvents();
-  window.eventBaton = toGlobalize.Main.getEventBaton();
-  window.sandbox = toGlobalize.Main.getSandbox();
-  window.modules = toGlobalize;
-  window.levelDropdown = toGlobalize.Main.getLevelDropdown();
+  window.debug_events = toGlobalize.Main.getEvents();
+  window.debug_eventBaton = toGlobalize.Main.getEventBaton();
+  window.debug_sandbox = toGlobalize.Main.getSandbox();
+  window.debug_modules = toGlobalize;
+  window.debug_levelDropdown = toGlobalize.Main.getLevelDropdown();
+  window.debug_under = _;
+  window.debug_copyTree = function() {
+    return toGlobalize.Main.getSandbox().mainVis.gitEngine.printAndCopyTree();
+  };
 });
 

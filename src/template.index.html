@@ -17,6 +17,13 @@
 	<link rel="stylesheet" href="src/style/font-awesome.css" type="text/css" charset="utf-8">
 </head>
 <body>
+  <!-- lol noscript. I did not write 9k+ lines of JS just for you to bounce off my website -->
+  <noscript>
+    <div style="z-index:1000000;background:red;color:white;position:absolute;top:0;left:0;height:300px;width:300px;">
+      This application simulates a git repository in your browser, so you will need
+      JS to use the app. Try enabling and refreshing the page -- Thanks!
+    </div>
+  </noscript>
 
   <!-- The entire interface is within this div -->
   <div id="interfaceWrapper" class="box horizontal flex1">
@@ -39,7 +46,7 @@
             </div>
             <div>
               <i class="icon-home"></i>
-              <span class="intl-aware" data-intl="learn-git-branching">
+              <span class="vcs-mode-aware intl-aware" data-intl="learn-git-branching">
                 Learn Git Branching
               </span>
             </div>
@@ -60,7 +67,13 @@
       </div>
     </div>
 
-    <div id="mainVisSpace" class="box flex1 horizontal visBackgroundColor">
+    <div id="mainVisSpace" class="box flex1 horizontal transitionAll visBackgroundColor">
+      <span class="modeText transitionOpacity gitMode">
+        Git
+      </span>
+      <span class="modeText transitionOpacity hgMode">
+        Hg
+      </span>
     </div>
   </div>
 
@@ -109,6 +122,11 @@
     <% for(var i = 0; i < items.length; i++) { %>
       <% if (items[i].text) { %>
         <a data-id="<%= items[i].id %>"><%= items[i].text %></a>
+      <% } else if (items[i].newPageLink) { %>
+        <a data-id="<%= items[i].id %>" 
+          target="_blank" href="<%= items[i].href %>">
+          <i data-id="<%= items[i].id %>" class="icon-<%= items[i].icon %>"></i>
+        </a>
       <% } else { %>
         <a data-id="<%= items[i].id %>">
           <i data-id="<%= items[i].id %>" class="icon-<%= items[i].icon %>"></i>
@@ -207,6 +225,19 @@
   </script>
 
   <script type="text/html" id="level-dropdown-view">
+    <div class="box horizontal center levelDropdownTabWrapper">
+      <% for (var i = 0; i < tabs.length; i++) { %>
+        <% if (tabs[i].id === selectedTab) { %>
+          <div class="levelDropdownTab" data-id="<%=tabs[i].id%>">
+        <% } else { %>
+          <div class="levelDropdownTab deselected" data-id="<%=tabs[i].id%>">
+        <% } %>
+          <span data-id="<%=tabs[i].id%>">
+            <%= tabs[i].name %>
+          </span>
+        </div>
+      <% } %>
+    </div>
   </script>
 
   <script type="text/html" id="series-view">
@@ -385,10 +416,11 @@
   <script type="text/html" id="left-right-template">
     <% if (showLeft) { %>
       <div class="box left">
+        <i class="icon-circle-arrow-left"></i>
     <% } else { %>
-      <div class="box left hideLeft">
+      <div class="box exit">
+        <i class="icon-signout"></i>
     <% } %>
-      <i class="icon-circle-arrow-left"></i>
     </div>
     <div class="box right">
       <% if (!lastNav) { %>

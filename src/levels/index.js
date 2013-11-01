@@ -2,45 +2,66 @@
 // a sequence proceed in the order listed here
 exports.levelSequences = {
   intro: [
-    require('../../levels/intro/commits').level,
-    require('../../levels/intro/branching').level,
-    require('../../levels/intro/merging').level,
-    require('../../levels/intro/rebasing').level
+    require('./intro/commits').level,
+    require('./intro/branching').level,
+    require('./intro/merging').level,
+    require('./intro/rebasing').level
   ],
   rampup: [
-    require('../../levels/rampup/detachedHead').level,
-    require('../../levels/rampup/relativeRefs').level,
-    require('../../levels/rampup/relativeRefs2').level,
-    require('../../levels/rampup/reversingChanges').level
+    require('./rampup/detachedHead').level,
+    require('./rampup/relativeRefs').level,
+    require('./rampup/relativeRefs2').level,
+    require('./rampup/reversingChanges').level
   ],
-  rebase: [
-    require('../../levels/rebase/manyRebases').level
+  move: [
+    require('./rampup/cherryPick').level,
+    require('./rampup/interactiveRebase').level
   ],
   mixed: [
-    require('../../levels/mixed/grabbingOneCommit').level,
-    require('../../levels/mixed/jugglingCommits').level,
-    require('../../levels/mixed/jugglingCommits2').level
+    require('./mixed/grabbingOneCommit').level,
+    require('./mixed/jugglingCommits').level,
+    require('./mixed/jugglingCommits2').level
   ],
   advanced: [
-    require('../../levels/advanced/multipleParents').level,
-    require('../../levels/rebase/selectiveRebase').level
+    require('./rebase/manyRebases').level,
+    require('./advanced/multipleParents').level,
+    require('./rebase/selectiveRebase').level
+  ],
+  remote: [
+    require('./remote/clone').level,
+    require('./remote/remoteBranches').level,
+    require('./remote/fetch').level,
+    require('./remote/pull').level,
+    require('./remote/fakeTeamwork').level,
+    require('./remote/push').level,
+    require('./remote/fetchRebase').level
+  ],
+  remoteAdvanced: [
+    require('./remote/pushManyFeatures').level,
+    require('./remote/mergeManyFeatures').level,
+    require('./remote/tracking').level,
+    require('./remote/pushArgs').level,
+    require('./remote/pushArgs2').level,
+    require('./remote/fetchArgs').level,
+    require('./remote/sourceNothing').level,
+    require('./remote/pullArgs').level
   ]
 };
 
 // there are also cute names and such for sequences
-exports.sequenceInfo = {
+var sequenceInfo = exports.sequenceInfo = {
   intro: {
     displayName: {
       'en_US': 'Introduction Sequence',
       'ja': 'まずはここから',
-      'fr_FR': 'Sequence d\'introduction',
-      'zh_CN': '序列简介',
+      'fr_FR': 'Séquence d\'introduction',
+      'zh_CN': '基础篇',
       'ko': '기본 명령어'
     },
     about: {
       'en_US': 'A nicely paced introduction to the majority of git commands',
       'ja': 'gitの基本的なコマンド群をほどよいペースで学ぶ',
-      'fr_FR': 'Une introduction en douceur à la majoité des commandes git',
+      'fr_FR': 'Une introduction en douceur à la majorité des commandes git',
       'zh_CN': '循序渐进介绍git主要命令',
       'ko': '브랜치 관련 주요 git 명령어를 깔끔하게 알려드립니다'
     }
@@ -49,26 +70,48 @@ exports.sequenceInfo = {
     displayName: {
       'en_US': 'Ramping Up',
       'ja': '次のレベルに進もう',
+      'fr_FR': 'Montée en puissance',
       'zh_CN': '进阶篇'
     },
     about: {
       'en_US': 'The next serving of 100% git awesomes-ness. Hope you\'re hungry',
       'ja': '更にgitの素晴らしさを堪能しよう',
-      'zh_CN': '接下来是git的超赞特性。迫不及待了吧!'
+      'fr_FR' : 'Le prochain service git 100% excellence. J\'espère que vous êtes affamés',
+      'zh_CN': '接下来是git的超赞特性。迫不及待了吧！'
     }
   },
-  rebase: {
+  remote: {
+    tab: 'remote',
     displayName: {
-      'en_US': 'Master the Rebase Luke!',
+      'en_US': 'Push & Pull -- Git Remotes!'
+    },
+    about: {
+      'en_US': 'Time to share your 1\'s and 0\'s kids; coding just got social'
+    }
+  },
+  remoteAdvanced: {
+    tab: 'remote',
+    displayName: {
+      'en_US': 'To Origin And Beyond -- Advanced Git Remotes!'
+    },
+    about: {
+      'en_US': 'And you thought being a benevolent dictator would be fun...'
+    }
+  },
+  move: {
+    displayName: {
+      'en_US': 'Moving Work Around',
+      // INTL out of sync :(
       'ja': 'Rebaseをモノにする',
       'fr_FR': 'Maîtrise Rebase, Luke!',
       'zh_CN': '精通Rebase！',
       'ko': '리베이스 완전정복!'
     },
     about: {
-      'en_US': 'What is this whole rebase hotness everyone is talking about? Find out!',
+      'en_US': 'Get comfortable with modifying the source tree',
+      // INTL out of sync :(
       'ja': '話題のrebaseってどんなものだろう？って人にオススメ',
-      'fr_FR': 'Que\'est-ce que c\'est que ce rebase dont tout le monde parle ? Découvrez-le !',
+      'fr_FR': 'Qu\'est-ce que ce rebase dont tout le monde parle ? Découvrez-le !',
       'ko': '그 좋다고들 말하는 rebase에 대해 알아봅시다!',
       'zh_CN': '大家都在说的rebase究竟是神马？看看吧！'
     }
@@ -92,12 +135,21 @@ exports.sequenceInfo = {
   advanced: {
     displayName: {
       'en_US': 'Advanced Topics',
+      'fr_FR': 'Sujets Avancés',
       'zh_CN': '高级主题'
     },
     about: {
       'en_US': 'For the truly brave!',
+      'fr_FR': 'Pour les plus courageux !',
       'zh_CN': '只为真正的勇士！'
     }
   }
+};
+
+exports.getTabForSequence = function(sequenceName) {
+  var info = sequenceInfo[sequenceName];
+  return (info.tab) ?
+    info.tab :
+    'main';
 };
 

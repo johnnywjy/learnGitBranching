@@ -50,6 +50,10 @@ var PositiveNegativeBase = BaseView.extend({
     this.navEvents.trigger('positive');
   },
 
+  exit: function() {
+    this.navEvents.trigger('exit');
+  },
+
   negative: function() {
     this.navEvents.trigger('negative');
   }
@@ -148,7 +152,13 @@ var LeftRightView = PositiveNegativeBase.extend({
   template: _.template($('#left-right-template').html()),
   events: {
     'click .left': 'negative',
+    'click .exit': 'exit',
     'click .right': 'positive'
+  },
+
+  exit: function() {
+    this.pipeEvents.trigger('exit');
+    LeftRightView.__super__.exit.apply(this);
   },
 
   positive: function() {
@@ -462,6 +472,20 @@ var NextLevelConfirm = ConfirmCancelTerminal.extend({
   }
 });
 
+var BackgroundView = Backbone.View.extend({
+  initialize: function() {
+    this.$body = $('body');
+    Main.getEvents().on('vcsModeChange', this.updateMode, this);
+  },
+
+  updateMode: function(eventData) {
+    eventData = eventData || {};
+    var isGit = eventData.mode === 'git';
+    this.$body.toggleClass('gitMode', isGit);
+    this.$body.toggleClass('hgMode', !isGit);
+  }
+});
+
 var ViewportAlert = Backbone.View.extend({
   initialize: function(options) {
     this.grabBatons();
@@ -654,7 +678,7 @@ var IntlHelperBar = HelperBar.extend({
       text: '学习Git分支',
       id: 'chinese'
     }, {
-      text: 'Français(e)',
+      text: 'français',
       id: 'french'
     }, {
       icon: 'signout',
@@ -705,6 +729,9 @@ var CommandsHelperBar = HelperBar.extend({
       text: 'Undo',
       id: 'undo'
     }, {
+      text: 'Objective',
+      id: 'objective'
+    }, {
       text: 'Help',
       id: 'help'
     }, {
@@ -716,6 +743,10 @@ var CommandsHelperBar = HelperBar.extend({
   fireCommand: function() {
     log.viewInteracted('helperBar');
     HelperBar.prototype.fireCommand.apply(this, arguments);
+  },
+
+  onObjectiveClick: function() {
+    this.fireCommand('objective');
   },
 
   onLevelsClick: function() {
@@ -743,7 +774,16 @@ var MainHelperBar = HelperBar.extend({
     }, {
       icon: 'globe',
       id: 'intl'
+    }, {
+      newPageLink: true,
+      icon: 'facebook',
+      id: 'fb',
+      href: 'https://www.facebook.com/LearnGitBranching'
     }];
+  },
+
+  onFbClick: function() {
+    log.viewInteracted('fbPageLink');
   },
 
   onIntlClick: function() {
@@ -819,6 +859,7 @@ var CanvasTerminalHolder = BaseView.extend({
 });
 
 exports.BaseView = BaseView;
+exports.BackgroundView = BackgroundView;
 exports.GeneralButton = GeneralButton;
 exports.ModalView = ModalView;
 exports.ModalTerminal = ModalTerminal;

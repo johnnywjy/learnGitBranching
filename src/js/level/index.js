@@ -8,7 +8,7 @@ var intl = require('../intl');
 var log = require('../log');
 
 var Errors = require('../util/errors');
-var Sandbox = require('../level/sandbox').Sandbox;
+var Sandbox = require('../sandbox/').Sandbox;
 var Constants = require('../util/constants');
 
 var Visualization = require('../visuals/visualization').Visualization;
@@ -16,6 +16,7 @@ var ParseWaterfall = require('../level/parseWaterfall').ParseWaterfall;
 var DisabledMap = require('../level/disabledMap').DisabledMap;
 var Command = require('../models/commandModel').Command;
 var GitShim = require('../git/gitShim').GitShim;
+var Commands = require('../commands');
 
 var MultiView = require('../views/multiView').MultiView;
 var CanvasTerminalHolder = require('../views').CanvasTerminalHolder;
@@ -23,7 +24,7 @@ var ConfirmCancelTerminal = require('../views').ConfirmCancelTerminal;
 var NextLevelConfirm = require('../views').NextLevelConfirm;
 var LevelToolbar = require('../views').LevelToolbar;
 
-var TreeCompare = require('../git/treeCompare').TreeCompare;
+var TreeCompare = require('../graph/treeCompare');
 
 var regexMap = {
   'help level': /^help level$/,
@@ -44,10 +45,7 @@ var Level = Sandbox.extend({
     this.level = options.level;
 
     this.gitCommandsIssued = [];
-    this.commandsThatCount = this.getCommandsThatCount();
     this.solved = false;
-
-    this.treeCompare = new TreeCompare();
 
     this.initGoalData(options);
     this.initName(options);
@@ -90,9 +88,11 @@ var Level = Sandbox.extend({
       return;
     }
 
-    var dialog = _.clone(intl.getStartDialog(levelObj));
+    debugger;
+    console.log(intl.getStartDialog(levelObj));
+    var dialog = $.extend({}, intl.getStartDialog(levelObj));
     // grab the last slide only
-    dialog.childViews = dialog.childViews.splice(-1);
+    dialog.childViews = dialog.childViews.slice(-1);
     new MultiView(_.extend(
       dialog,
       { deferred: deferred }
@@ -166,8 +166,11 @@ var Level = Sandbox.extend({
   },
 
   initGoalVisualization: function() {
+    var onlyMaster = TreeCompare.onlyMasterCompared(this.level);
     // first we make the goal visualization holder
-    this.goalCanvasHolder = new CanvasTerminalHolder();
+    this.goalCanvasHolder = new CanvasTerminalHolder({
+      text: (onlyMaster) ? intl.str('goal-only-master') : undefined
+    });
 
     // then we make a visualization. the "el" here is the element to
     // track for size information. the container is where the canvas will be placed
@@ -176,6 +179,9 @@ var Level = Sandbox.extend({
       containerElement: this.goalCanvasHolder.getCanvasLocation(),
       treeString: this.level.goalTreeString,
       noKeyboardInput: true,
+      smallCanvas: true,
+      isGoalVis: true,
+      levelBlob: this.level,
       noClick: true
     });
     return this.goalCanvasHolder;
@@ -291,27 +297,6 @@ var Level = Sandbox.extend({
     });
   },
 
-  getCommandsThatCount: function() {
-    var GitCommands = require('../git/commands');
-    var toCount = [
-      'git commit',
-      'git checkout',
-      'git rebase',
-      'git reset',
-      'git branch',
-      'git revert',
-      'git merge',
-      'git cherry-pick'
-    ];
-    var myRegexMap = {};
-    _.each(toCount, function(method) {
-      if (!GitCommands.regexMap[method]) { throw new Error('wut no regex'); }
-
-      myRegexMap[method] = GitCommands.regexMap[method];
-    });
-    return myRegexMap;
-  },
-
   undo: function() {
     this.gitCommandsIssued.pop();
     Level.__super__.undo.apply(this, arguments);
@@ -324,8 +309,10 @@ var Level = Sandbox.extend({
     }
 
     var matched = false;
-    _.each(this.commandsThatCount, function(regex) {
-      matched = matched || regex.test(command.get('rawStr'));
+    _.each(Commands.commands.getCommandsThatCount(), function(map) {
+      _.each(map, function(regex) {
+        matched = matched || regex.test(command.get('rawStr'));
+      });
     });
     if (matched) {
       this.gitCommandsIssued.push(command.get('rawStr'));
@@ -339,28 +326,8 @@ var Level = Sandbox.extend({
       return;
     }
 
-    // TODO refactor this ugly ass switch statement...
-    // BIG TODO REALLY REFACTOR HAX HAX
-    // ok so lets see if they solved it...
     var current = this.mainVis.gitEngine.exportTree();
-    var solved;
-    if (this.level.compareOnlyMaster) {
-      solved = this.treeCompare.compareBranchWithinTrees(current, this.level.goalTreeString, 'master');
-    } else if (this.level.compareOnlyBranches) {
-      solved = this.treeCompare.compareAllBranchesWithinTrees(current, this.level.goalTreeString);
-    } else if (this.level.compareAllBranchesHashAgnostic) {
-      solved = this.treeCompare.compareAllBranchesWithinTreesHashAgnostic(current, this.level.goalTreeString);
-    } else if (this.level.compareOnlyMasterHashAgnostic) {
-      solved = this.treeCompare.compareBranchesWithinTreesHashAgnostic(current, this.level.goalTreeString, ['master']);
-    } else if (this.level.compareOnlyMasterHashAgnosticWithAsserts) {
-      solved = this.treeCompare.compareBranchesWithinTreesHashAgnostic(current, this.level.goalTreeString, ['master']);
-      solved = solved && this.treeCompare.evalAsserts(
-        current,
-        this.level.goalAsserts
-      );
-    } else {
-      solved = this.treeCompare.compareAllBranchesWithinTreesAndHEAD(current, this.level.goalTreeString);
-    }
+    var solved = TreeCompare.dispatchFromLevel(this.level, current);
 
     if (!solved) {
       defer.resolve();
@@ -401,9 +368,13 @@ var Level = Sandbox.extend({
     Constants.GLOBAL.isAnimating = true;
     var skipFinishDialog = this.testOption('noFinishDialog');
     var finishAnimationChain = this.mainVis.gitVisuals.finishAnimation();
+    if (this.mainVis.originVis) {
+      finishAnimationChain = finishAnimationChain.then(
+        this.mainVis.originVis.gitVisuals.finishAnimation()
+      );
+    }
     if (!skipFinishDialog) {
-      finishAnimationChain = finishAnimationChain
-      .then(function() {
+      finishAnimationChain = finishAnimationChain.then(function() {
         // we want to ask if they will move onto the next level
         // while giving them their results...
         var nextDialog = new NextLevelConfirm({
@@ -419,6 +390,7 @@ var Level = Sandbox.extend({
     finishAnimationChain
     .then(function() {
       if (!skipFinishDialog && nextLevel) {
+        log.choseNextLevel(nextLevel.id);
         Main.getEventBaton().trigger(
           'commandSubmitted',
           'level ' + nextLevel.id

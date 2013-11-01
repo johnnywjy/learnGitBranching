@@ -3,6 +3,7 @@ var Backbone = require('backbone');
 
 var constants = require('../util/constants');
 var util = require('../util');
+var intl = require('../intl');
 
 /**
  * Globals
@@ -26,7 +27,7 @@ var init = function() {
     *   - initializing the command input bar
     *   - handling window.focus and zoom events
   **/
-  var Sandbox = require('../level/sandbox').Sandbox;
+  var Sandbox = require('../sandbox/').Sandbox;
   var Level = require('../level').Level;
   var EventBaton = require('../util/eventBaton').EventBaton;
   var LevelArbiter = require('../level/arbiter').LevelArbiter;
@@ -41,9 +42,25 @@ var init = function() {
   });
 
   events.on('localeChanged', intlRefresh);
+  events.on('vcsModeChange', vcsModeRefresh);
 
   initRootEvents(eventBaton);
   initDemo(sandbox);
+};
+
+var vcsModeRefresh = function(eventData) {
+  if (!window.$) { return; }
+
+  var mode = eventData.mode;
+  var displayMode = mode.slice(0, 1).toUpperCase() + mode.slice(1);
+  var otherMode = (displayMode === 'Git') ? 'Hg' : 'Git';
+  var regex = new RegExp(otherMode, 'g');
+
+  document.title = intl.str('learn-git-branching').replace(regex, displayMode);
+  $('span.vcs-mode-aware').each(function(i, el) {
+    var text = $(el).text().replace(regex, displayMode);
+    $(el).text(text);
+  });
 };
 
 var intlRefresh = function() {
@@ -107,30 +124,73 @@ var initDemo = function(sandbox) {
 
   // being the smart programmer I am (not), I dont include a true value on demo, so
   // I have to check if the key exists here
-  if (params.hasOwnProperty('demo')) {
+  var commands;
+  if (/(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent) || /android/i.test(navigator.userAgent)) {
     sandbox.mainVis.customEvents.on('gitEngineReady', function() {
-      eventBaton.trigger(
-        'commandSubmitted',
-        [
-          "git commit; git checkout -b bugFix C1; git commit; git merge master; git checkout master; git commit; git rebase bugFix;",
-          "delay 1000; reset;",
-          "level rebase1 --noFinishDialog --noStartCommand --noIntroDialog;",
-          "delay 2000; show goal; delay 1000; hide goal;",
-          "git checkout bugFix; git rebase master; git checkout side; git rebase bugFix;",
-          "git checkout another; git rebase side; git rebase another master;",
-          "help; levels"
-        ].join(''));
+      eventBaton.trigger('commandSubmitted', 'mobile alert');
     });
+  }
+
+  if (params.hasOwnProperty('demo')) {
+    commands = [
+      "git commit; git checkout -b bugFix C1; git commit; git merge master; git checkout master; git commit; git rebase bugFix;",
+      "delay 1000; reset;",
+      "level advanced1 --noFinishDialog --noStartCommand --noIntroDialog;",
+      "delay 2000; show goal; delay 1000; hide goal;",
+      "git checkout bugFix; git rebase master; git checkout side; git rebase bugFix;",
+      "git checkout another; git rebase side; git rebase another master;",
+      "help; levels"
+    ];
+  } else if (params.hasOwnProperty('hgdemo')) {
+    commands = [
+      'importTreeNow {"branches":{"master":{"target":"C3","id":"master"},"feature":{"target":"C2","id":"feature"},"debug":{"target":"C4","id":"debug"}},"commits":{"C0":{"parents":[],"id":"C0","rootCommit":true},"C1":{"parents":["C0"],"id":"C1"},"C2":{"parents":["C1"],"id":"C2"},"C3":{"parents":["C1"],"id":"C3"},"C4":{"parents":["C2"],"id":"C4"}},"HEAD":{"target":"feature","id":"HEAD"}}',
+      'delay 1000',
+      'git rebase master',
+      'delay 1000',
+      'undo',
+      'hg book',
+      'delay 1000',
+      'hg rebase -d master'
+    ];
+    commands = commands.join(';#').split('#'); // hax
+  } else if (params.hasOwnProperty('hgdemo2')) {
+    commands = [
+      'importTreeNow {"branches":{"master":{"target":"C3","id":"master"},"feature":{"target":"C2","id":"feature"},"debug":{"target":"C4","id":"debug"}},"commits":{"C0":{"parents":[],"id":"C0","rootCommit":true},"C1":{"parents":["C0"],"id":"C1"},"C2":{"parents":["C1"],"id":"C2"},"C3":{"parents":["C1"],"id":"C3"},"C4":{"parents":["C2"],"id":"C4"}},"HEAD":{"target":"debug","id":"HEAD"}}',
+      'delay 1000',
+      'git rebase master',
+      'delay 1000',
+      'undo',
+      'hg sum',
+      'delay 1000',
+      'hg rebase -d master'
+    ];
+    commands = commands.join(';#').split('#'); // hax
+  } else if (params.hasOwnProperty('remoteDemo')) {
+    commands = [
+      'git clone',
+      'git commit',
+      'git fakeTeamwork',
+      'git pull',
+      'git push',
+      'git commit',
+      'git fakeTeamwork',
+      'git pull --rebase',
+      'git push',
+      'levels'
+    ];
+    commands = commands.join(';#').split('#'); // hax
+
   } else if (!params.hasOwnProperty('NODEMO')) {
+    commands = [
+      "git help;",
+      "delay 1000;",
+      "help;",
+      "levels"
+    ];
+  }
+  if (commands) {
     sandbox.mainVis.customEvents.on('gitEngineReady', function() {
-      eventBaton.trigger(
-        'commandSubmitted',
-        [
-          "git help;",
-          "delay 1000;",
-          "help;",
-          "levels"
-        ].join(''));
+      eventBaton.trigger('commandSubmitted', commands.join(''));
     });
   }
 
@@ -146,11 +206,6 @@ var initDemo = function(sandbox) {
     });
   }
 
-  if (/(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent) || /android/i.test(navigator.userAgent)) {
-    sandbox.mainVis.customEvents.on('gitEngineReady', function() {
-      eventBaton.trigger('commandSubmitted', 'mobile alert');
-    });
-  }
 };
 
 if (require('../util').isBrowser()) {
@@ -168,7 +223,8 @@ function CommandUI() {
   var Collections = require('../models/collections');
   var CommandViews = require('../views/commandViews');
 
-  var mainHelprBar = new Views.MainHelperBar();
+  var mainHelperBar = new Views.MainHelperBar();
+  var backgroundView = new Views.BackgroundView();
 
   this.commandCollection = new Collections.CommandCollection();
   this.commandBuffer = new Collections.CommandBuffer({

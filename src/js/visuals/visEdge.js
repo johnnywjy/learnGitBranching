@@ -130,6 +130,7 @@ var VisEdge = VisBase.extend({
     var stat = this.gitVisuals.getCommitUpstreamStatus(this.get('tail'));
     var map = {
       'branch': 1,
+      'tag': 1,
       'head': GRAPHICS.edgeUpstreamHeadOpacity,
       'none': GRAPHICS.edgeUpstreamNoneOpacity
     };
@@ -167,7 +168,8 @@ var VisEdge = VisBase.extend({
     }
 
     this.get('path').toBack();
-    this.get('path').stop().animate(
+    this.get('path').stop();
+    this.get('path').animate(
       attr.path,
       speed !== undefined ? speed : this.get('animationSpeed'),
       easing || this.get('animationEasing')

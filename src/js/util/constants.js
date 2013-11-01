@@ -25,13 +25,15 @@ var GRAPHICS = {
   defaultEasing: 'easeInOut',
   defaultAnimationTime: 400,
 
-  //rectFill: '#FF3A3A',
   rectFill: 'hsb(0.8816909813322127,0.7,1)',
   headRectFill: '#2831FF',
   rectStroke: '#FFF',
   rectStrokeWidth: '3',
 
+  originDash: '- ',
+
   multiBranchY: 20,
+  multiTagY: 15,
   upstreamHeadOpacity: 0.5,
   upstreamNoneOpacity: 0.2,
   edgeUpstreamHeadOpacity: 0.4,
@@ -44,6 +46,10 @@ var GRAPHICS = {
   defaultNodeStrokeWidth: 2,
   defaultNodeStroke: '#FFF',
 
+  tagFill: 'hsb(0,0,0.9)',
+  tagStroke: '#FFF',
+  tagStrokeWidth: '2',
+  
   orphanNodeFill: 'hsb(0.5,0.8,0.7)'
 };
 
